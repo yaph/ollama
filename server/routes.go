@@ -893,6 +893,7 @@ func (s *Server) GenerateRoutes() http.Handler {
 	config.AllowOrigins = envconfig.AllowOrigins
 
 	r := gin.Default()
+	r.HandleMethodNotAllowed = true
 	r.Use(
 		cors.New(config),
 		allowedHostsMiddleware(s.addr),
