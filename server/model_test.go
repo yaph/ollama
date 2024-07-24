@@ -268,7 +268,7 @@ func TestParseFromFileFromLayer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse from file: %v", err)
 	}
-	
+
 	fmt.Println(layers)
 	// assert something here i don't know yet
 
@@ -286,16 +286,11 @@ func TestParseFromFileFromLayer(t *testing.T) {
 		}
 		defer file2.Close()
 
-		num1GGUF := llm.NewGGUFV3(binary.LittleEndian)
-		num2GGUF := llm.NewGGUFV3(binary.LittleEndian)
-		kv := make(llm.KV)
-		tensors := []llm.Tensor{}
-
-		if err := num1GGUF.Encode(file2, kv, tensors); err != nil {
+		if err := sGGUF.Encode(file2, kv, tensors); err != nil {
 			t.Fatalf("failed to encode gguf1: %v", err)
 		}
 
-		if err := num2GGUF.Encode(file2, kv, tensors); err != nil {
+		if err := sGGUF.Encode(file2, kv, tensors); err != nil {
 			t.Fatalf("failed to encode gguf2: %v", err)
 		}
 
