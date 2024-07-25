@@ -15,7 +15,6 @@ import (
 	"slices"
 	"strings"
 	"text/template/parse"
-	"time"
 
 	"github.com/ollama/ollama/api"
 	"github.com/ollama/ollama/convert"
@@ -158,30 +157,7 @@ func parseFromZipFile(_ context.Context, file *os.File, digest string, fn func(a
 	defer temp.Close()
 	defer os.Remove(temp.Name())
 
-	convertWriter := &ConvertWriter{ws: temp}
-	ticker := time.NewTicker(30 * time.Millisecond)
-	done := make(chan struct{})
-	defer close(done)
-	go func (){
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				fn(api.ProgressResponse{
-					Status:   fmt.Sprintf("converting model %d%%", ),
-					Type: "convert",
-				})
-			case <-done:
-				fn(api.ProgressResponse{
-					Status:   fmt.Sprintf("converting model %d%%", ),
-					Type: "convert",
-				})
-				return
-			}
-		}
-	}()
-
-	if err := convert.Convert(tempDir, convertWriter); err != nil {
+	if err := convert.Convert(tempDir, temp, fn); err != nil {
 		return nil, err
 	}
 
@@ -211,24 +187,6 @@ func parseFromZipFile(_ context.Context, file *os.File, digest string, fn func(a
 	return detectChatTemplate(layers)
 }
 
-type ConvertWriter struct {
-    ws      io.WriteSeeker
-    written int64
-}
-
-func (w *ConvertWriter) Write(p []byte) (int, error) {
-    n, err := w.ws.Write(p)
-    w.written += int64(n)
-    return n, err
-}
-
-func (w *ConvertWriter) Seek(offset int64, whence int) (int64, error) {
-    return w.ws.Seek(offset, whence)
-}
-
-func (w *ConvertWriter) BytesWritten() int64 {
-    return w.written
-}
 
 func parseFromFile(ctx context.Context, file *os.File, digest string, fn func(api.ProgressResponse)) (layers []*layerGGML, err error) {
 	sr := io.NewSectionReader(file, 0, 512)

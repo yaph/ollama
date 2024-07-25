@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ollama/ollama/api"
 	"golang.org/x/exp/maps"
 )
 
@@ -506,7 +507,7 @@ func writeGGUFArray[S ~[]E, E any](w io.Writer, t uint32, s S) error {
 	return binary.Write(w, binary.LittleEndian, s)
 }
 
-func WriteGGUF(ws io.WriteSeeker, kv KV, ts []*Tensor) error {
+func WriteGGUF(ws io.WriteSeeker, kv KV, ts []*Tensor, fn func(api.ProgressResponse)) error {
 	if err := binary.Write(ws, binary.LittleEndian, []byte("GGUF")); err != nil {
 		return err
 	}
@@ -553,7 +554,11 @@ func WriteGGUF(ws io.WriteSeeker, kv KV, ts []*Tensor) error {
 	}
 
 	var alignment int64 = 32
-	for _, t := range ts {
+	for i, t := range ts {
+		fn(api.ProgressResponse{
+			Status: fmt.Sprintf("converting model %d/%d", i + 1, len(ts)),
+			Type: "convert",
+		})
 		if err := ggufWriteTensor(ws, t, alignment); err != nil {
 			return err
 		}
@@ -660,4 +665,29 @@ func ggufWriteTensor(ws io.WriteSeeker, t *Tensor, alignment int64) error {
 
 func ggufPadding(offset, align int64) int64 {
 	return (align - offset%align) % align
+}
+
+
+type ConvertWriter struct {
+	WS      io.WriteSeeker
+    Written int64 
+	Total   int64
+}
+
+func (w ConvertWriter) Write(p []byte) (int, error) {
+    n, err := w.WS.Write(p)
+    w.Written += int64(n)
+    return n, err
+}
+
+func (w *ConvertWriter) SetTotal(total int) {
+	w.Total = int64(total)
+}	
+
+func (w ConvertWriter) Seek(offset int64, whence int) (int64, error) {
+    return w.WS.Seek(offset, whence)
+}
+
+func (w *ConvertWriter) Tensors() int64 {
+    return w.Written
 }

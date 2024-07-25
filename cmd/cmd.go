@@ -141,6 +141,7 @@ func CreateHandler(cmd *cobra.Command, args []string) error {
 			if convertSpin != nil {
 				convertSpin.SetMessage(resp.Status)
 			} else {
+				status = resp.Status
 				convertSpin = progress.NewSpinner(resp.Status)
 				p.Add("convert", convertSpin)
 			}
