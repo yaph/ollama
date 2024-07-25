@@ -666,28 +666,3 @@ func ggufWriteTensor(ws io.WriteSeeker, t *Tensor, alignment int64) error {
 func ggufPadding(offset, align int64) int64 {
 	return (align - offset%align) % align
 }
-
-
-type ConvertWriter struct {
-	WS      io.WriteSeeker
-    Written int64 
-	Total   int64
-}
-
-func (w ConvertWriter) Write(p []byte) (int, error) {
-    n, err := w.WS.Write(p)
-    w.Written += int64(n)
-    return n, err
-}
-
-func (w *ConvertWriter) SetTotal(total int) {
-	w.Total = int64(total)
-}	
-
-func (w ConvertWriter) Seek(offset int64, whence int) (int64, error) {
-    return w.WS.Seek(offset, whence)
-}
-
-func (w *ConvertWriter) Tensors() int64 {
-    return w.Written
-}
